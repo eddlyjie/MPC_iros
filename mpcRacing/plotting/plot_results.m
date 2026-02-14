@@ -1,0 +1,492 @@
+close all
+clear all
+clc
+
+version = 2;
+savefolder = "./results_v"+num2str(version)+"/";
+savebool = true;
+
+% 1. Load Data
+% load benchmark data
+load("../benchmark_data/model_save28_episode_1_states.mat")
+s_car1_bm = s_car1;
+s_car2_bm = s_car2;
+solve_times_car1_bm = solve_times_car1;
+vehicle1_states_bm = vehicle1_states;
+vehicle2_states_bm = vehicle2_states;
+
+% load evaluation data
+load("../eval_data/model_save28_episode_7_data.mat")
+s_car1_eval = s_car1;
+s_car2_eval = s_car2;
+reward_targets_active_eval = reward_targets_active;
+solve_times_car1_eval = solve_times_car1;
+vehicle1_states_eval = vehicle1_states;
+vehicle2_states_eval = vehicle2_states;
+predicted_states_eval = predicted_states_car1;
+
+% load track
+load("../processed_ThunderHill.mat")
+track.center = fined_center_line;
+track.left = fined_left_bound;
+track.right = fined_right_bound;
+
+% load score history
+data = readmatrix("../score_history.csv");
+
+% 2. Define IEEE Plotting Standards
+plotFontName = 'Arial';
+axisFontSize = 10;
+labelFontSize = 11;
+titleFontSize = 12;
+
+% 3. Trajectories Plot (Combined Figure)
+% Set figure size for IEEE two-column width (approx 18 cm)
+figWidth_cm = 18;
+figHeight_cm = 16; % Made taller for track plots
+figure('Name', 'Vehicle Trajectories (Benchmark vs Eval)', ...
+       'Units', 'centimeters', ...
+       'Position', [5 5 figWidth_cm figHeight_cm]);
+
+% --- Subplot 1: Benchmark Trajectories ---
+ax1 = subplot(2, 1, 1);
+hold(ax1, 'on');
+plot_track(ax1, track); % Pass axes handle to modified function
+c1_bm = plot(ax1, vehicle1_states_bm(:,1), vehicle1_states_bm(:,2), 'b-', 'DisplayName', 'Ego Benchmark');
+c2_bm = plot(ax1, vehicle2_states_bm(:,1), vehicle2_states_bm(:,2), 'r-', 'DisplayName', 'Opponent Benchmark');
+hold(ax1, 'off');
+
+% Apply limits and styling
+xlim(ax1, [-60, 355]);
+ylim(ax1, [-700, -500]);
+xl = xlim(ax1);
+yl = ylim(ax1);
+xticks(ax1, xl(1):50:xl(2));
+yticks(ax1, yl(1):50:yl(2));
+title(ax1, 'Benchmark Trajectories', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel(ax1, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel(ax1, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+lgd1 = legend(ax1, 'Location', 'northeast');
+set(lgd1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off');
+set(ax1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+
+% --- Subplot 2: Proposed Trajectories ---
+ax2 = subplot(2, 1, 2);
+hold(ax2, 'on');
+plot_track(ax2, track); % Pass axes handle
+c1_eval = plot(ax2, vehicle1_states_eval(:,1), vehicle1_states_eval(:,2), 'b-', 'DisplayName', 'Ego Proposed');
+c2_eval = plot(ax2, vehicle2_states_eval(:,1), vehicle2_states_eval(:,2), 'r-', 'DisplayName', 'Opponent Proposed');
+hold(ax2, 'off');
+
+% Apply limits and styling
+xlim(ax2, [-60, 355]);
+ylim(ax2, [-700, -500]);
+xl = xlim(ax2);
+yl = ylim(ax2);
+xticks(ax2, xl(1):50:xl(2));
+yticks(ax2, yl(1):50:yl(2));
+title(ax2, 'Proposed Trajectories', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel(ax2, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel(ax2, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+lgd2 = legend(ax2, 'Location', 'northeast');
+set(lgd2, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off');
+set(ax2, 'FontName', 'Times New Roman', 'FontSize', 10, 'Box', 'on', 'TickDir', 'in');
+if savebool
+    saveas(gcf, savefolder + "Trajs.eps", 'epsc');
+end
+% 4. Track Progression Plot
+figWidth_cm_prog = 18;
+figHeight_cm_prog = 9;
+figure('Name', 'Track Progression', ...
+       'Units', 'centimeters', ...
+       'Position', [10 10 figWidth_cm_prog figHeight_cm_prog]);
+
+hold on;
+t_bm = 0:0.1:(length(s_car2_bm)-1)*0.1;
+t_eval = 0:0.1:(length(s_car2_eval)-1)*0.1;
+
+% Plot relative to starting position
+s2_bm = plot(t_bm, s_car2_bm - s_car2_bm(1), 'b-', 'DisplayName', 'Benchmark');
+s2_eval = plot(t_eval, s_car2_eval - s_car2_eval(1), 'r--', 'DisplayName', 'Proposed');
+hold off;
+grid on;
+
+% Apply IEEE Styling
+% title('Track Progression (Opponent)', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel('Track Progression [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+lgd3 = legend('Location', 'southeast');
+set(lgd3, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on');
+set(gca, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+if savebool
+    saveas(gcf, savefolder + "Progression.eps", 'epsc');
+end
+% 5. Control Command Plots (Ego)
+
+% Create time vectors based on the state vector lengths
+t_bm_states = 0:0.1:(size(vehicle1_states_bm, 1)-1)*0.1;
+t_eval_states = 0:0.1:(size(vehicle1_states_eval, 1)-1)*0.1;
+
+% --- Steering Command Plot ---
+figWidth_cm_cmd = 18;
+figHeight_cm_cmd = 9;
+figure('Name', 'Steering Command (Ego)', ...
+       'Units', 'centimeters', ...
+       'Position', [15 15 figWidth_cm_cmd figHeight_cm_cmd]);
+
+hold on;
+plot(t_bm_states, vehicle1_states_bm(:,7), 'b-', 'DisplayName', 'Benchmark');
+plot(t_eval_states, vehicle1_states_eval(:,7), 'r--', 'DisplayName', 'Proposed');
+hold off;
+grid on;
+
+% Apply IEEE Styling
+% title('Steering Command (Ego)', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel('Steering Angle [rad]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+lgd4 = legend('Location', 'southeast');
+set(lgd4, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on');
+set(gca, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+if savebool
+    saveas(gcf, savefolder + "Steering.eps", 'epsc');
+end
+% --- Acceleration Command Plot ---
+figure('Name', 'Acceleration Command (Ego)', ...
+       'Units', 'centimeters', ...
+       'Position', [20 20 figWidth_cm_cmd figHeight_cm_cmd]);
+
+hold on;
+plot(t_bm_states, vehicle1_states_bm(:,8), 'b-', 'DisplayName', 'Benchmark');
+plot(t_eval_states, vehicle1_states_eval(:,8), 'r--', 'DisplayName', 'Proposed');
+hold off;
+grid on;
+
+% Apply IEEE Styling
+% title('Acceleration Command (Ego)', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel('Time [s]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel('Acceleration [$m/s^2$]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+lgd5 = legend('Location', 'southeast');
+set(lgd5, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on');
+set(gca, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+if savebool
+    saveas(gcf, savefolder + "Acc.eps", 'epsc');
+end
+% % 6. Prediction and Target Plots
+% % Set figure size
+% figWidth_cm_pred = 18;
+% figHeight_cm_pred = 10;
+% figure('Name', 'Prediction vs Targets', ...
+%        'Units', 'centimeters', ...
+%        'Position', [25 25 figWidth_cm_pred figHeight_cm_pred]);
+
+% % --- Subplot 1: Frame i = 100 ---
+% ax_pred1 = subplot(1, 3, 1);
+% hold(ax_pred1, 'on');
+% i = 100;
+% 
+% plot_track(ax_pred1, track)
+% 
+% % Extract data for frame 100
+% % Targets: reward_targets_active_eval(i, :, 1:2) -> squeeze to 4x2
+% targets100 = squeeze(reward_targets_active_eval(i, :, 1:2));
+% % Predictions: predicted_states_eval(i, 1:2, 2:31) -> squeeze to 2x30
+% preds100_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+% pred100_x = preds100_raw(1, :);
+% pred100_y = preds100_raw(2, :);
+% car2_pos100 = vehicle2_states_eval(i, 1:2);
+% % Plot
+% plot(ax_pred1, targets100(:, 1), targets100(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+% plot(ax_pred1, pred100_x, pred100_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% plot(ax_pred1, car2_pos100(1), car2_pos100(2), 'mx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Opponent Position');
+% hold(ax_pred1, 'off');
+% 
+% % Apply IEEE Styling
+% title(ax_pred1, 't = 10.0 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+% xlabel(ax_pred1, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% ylabel(ax_pred1, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% % lgd_pred1 = legend(ax_pred1, 'Location', 'northwest');
+% % set(lgd_pred1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off');
+% set(ax_pred1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+% axis(ax_pred1, 'equal');
+% xlim([50,120])
+% ylim([-670,-530])
+% % --- Subplot 2: Frame i = 110 ---
+% ax_pred2 = subplot(1, 3, 2);
+% hold(ax_pred2, 'on');
+% i = 105;
+% plot_track(ax_pred2,track)
+% % Extract data for frame 110
+% targets110 = squeeze(reward_targets_active_eval(i, :, 1:2));
+% preds110_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+% pred110_x = preds110_raw(1, :);
+% pred110_y = preds110_raw(2, :);
+% car2_pos110 = vehicle2_states_eval(i, 1:2);
+% 
+% % Plot
+% h_target = plot(ax_pred2, targets110(:, 1), targets110(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+% h_pred = plot(ax_pred2, pred110_x, pred110_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% h_car2 = plot(ax_pred2, car2_pos110(1), car2_pos110(2), 'mx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Opponent Position');
+% hold(ax_pred2, 'off');
+% 
+% % Apply IEEE Styling
+% title(ax_pred2, 't = 10.5 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+% xlabel(ax_pred2, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% ylabel(ax_pred2, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% % lgd_pred2 = legend(ax_pred2, 'Location', 'northwest');
+% % set(lgd_pred2, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off');
+% set(ax_pred2, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+% axis(ax_pred2, 'equal');
+% xlim([50,120])
+% ylim([-670,-530])
+% 
+% ax_pred3 = subplot(1, 3, 3);
+% hold(ax_pred3, 'on');
+% i = 110;
+% plot_track(ax_pred3,track)
+% % Extract data for frame 110
+% targets110 = squeeze(reward_targets_active_eval(i, :, 1:2));
+% preds110_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+% pred110_x = preds110_raw(1, :);
+% pred110_y = preds110_raw(2, :);
+% car2_pos110 = vehicle2_states_eval(i, 1:2);
+% 
+% % Plot
+% plot(ax_pred3, targets110(:, 1), targets110(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+% plot(ax_pred3, pred110_x, pred110_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% plot(ax_pred3, car2_pos110(1), car2_pos110(2), 'mx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Opponent Position');
+% hold(ax_pred3, 'off');
+% 
+% % Apply IEEE Styling
+% title(ax_pred3, 't = 11.0 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+% xlabel(ax_pred3, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% ylabel(ax_pred3, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% % lgd_pred3 = legend(ax_pred3, 'Location', 'northwest');
+% % set(lgd_pred3, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off');
+% set(ax_pred3, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+% axis(ax_pred3, 'equal');
+% xlim([50,120])
+% ylim([-670,-530])
+% 
+% % --- Create a single, centered legend at the bottom ---
+% % Use handles from the first subplot
+% lgd = legend(ax_pred3, [h_target, h_pred, h_car2], {'Reward Targets', 'Predicted Trajectory', 'Opponent Position'}, ...
+%     'Orientation', 'horizontal', ...
+%     'FontName', plotFontName, ...
+%     'FontSize', axisFontSize, ...
+%     'Box', 'off');
+% 
+% % Reposition the legend to be centered at the bottom of the figure
+% lgd.Units = 'normalized';
+% lgdPos = lgd.Position;
+% % Center it horizontally, move it to the bottom
+% lgdPos(1) = (1 - lgdPos(3)) / 2; % (1 - width) / 2
+% lgdPos(2) = 0.01; % 1% from the bottom edge
+% lgd.Position = lgdPos;
+% 6. Prediction and Target Plots
+% Set figure size
+figWidth_cm_pred = 18;
+figHeight_cm_pred = 10;
+figure('Name', 'Prediction vs Targets', ...
+       'Units', 'centimeters', ...
+       'Position', [25 25 figWidth_cm_pred figHeight_cm_pred]);
+
+% --- Define a common scale for the velocity vector ---
+vector_scale = 8; % Represents 8 meters length for the unit vector
+vector_linewidth = 2.5;
+vector_color = 'm';
+
+% --- Subplot 1: Frame i = 100 ---
+ax_pred1 = subplot(1, 3, 1);
+hold(ax_pred1, 'on');
+i = 100;
+plot_track(ax_pred1, track)
+% Extract data for frame 100
+% Targets: reward_targets_active_eval(i, :, 1:2) -> squeeze to 4x2
+targets100 = squeeze(reward_targets_active_eval(i, :, 1:2));
+% Predictions: predicted_states_eval(i, 1:2, 2:31) -> squeeze to 2x30
+preds100_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+pred100_x = preds100_raw(1, :);
+pred100_y = preds100_raw(2, :);
+
+% --- Opponent Velocity Calculation (i=100) ---
+car2_state100 = vehicle2_states_eval(i, :);
+car2_pos100 = car2_state100(1:2); % [x, y]
+car2_v100   = car2_state100(3);   % v (lateral)
+car2_psi100 = car2_state100(5);   % psi (heading)
+car2_ux100  = car2_state100(6);   % ux (longitudinal)
+% Calculate global velocity components
+car2_vx100 = car2_ux100 * cos(car2_psi100) - car2_v100 * sin(car2_psi100);
+car2_vy100 = car2_ux100 * sin(car2_psi100) + car2_v100 * cos(car2_psi100);
+% Calculate unit vector (handling zero velocity)
+vel_mag100 = sqrt(car2_vx100^2 + car2_vy100^2);
+if vel_mag100 > 1e-6
+    car2_uv_x100 = car2_vx100 / vel_mag100;
+    car2_uv_y100 = car2_vy100 / vel_mag100;
+else
+    car2_uv_x100 = 0; % No direction if no velocity
+    car2_uv_y100 = 0;
+end
+% --- End Opponent Velocity Calculation ---
+
+% Plot
+plot(ax_pred1, targets100(:, 1), targets100(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+plot(ax_pred1, pred100_x, pred100_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% Plot the velocity vector as a simple line
+plot(ax_pred1, ...
+    [car2_pos100(1), car2_pos100(1) + car2_uv_x100 * vector_scale], ...
+    [car2_pos100(2), car2_pos100(2) + car2_uv_y100 * vector_scale], ...
+    '-', 'Color', vector_color, 'LineWidth', vector_linewidth, ...
+    'DisplayName', 'Opponent Position & Velocity');
+
+hold(ax_pred1, 'off');
+% Apply IEEE Styling
+title(ax_pred1, 't = 10.0 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel(ax_pred1, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel(ax_pred1, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+set(ax_pred1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+axis(ax_pred1, 'equal');
+xlim([50,120])
+ylim([-670,-530])
+
+% --- Subplot 2: Frame i = 105 ---
+ax_pred2 = subplot(1, 3, 2);
+hold(ax_pred2, 'on');
+i = 105; % Note: User's original code had i=105 here, not 110
+plot_track(ax_pred2,track)
+% Extract data
+targets105 = squeeze(reward_targets_active_eval(i, :, 1:2));
+preds105_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+pred105_x = preds105_raw(1, :);
+pred105_y = preds105_raw(2, :);
+
+% --- Opponent Velocity Calculation (i=105) ---
+car2_state105 = vehicle2_states_eval(i, :);
+car2_pos105 = car2_state105(1:2); % [x, y]
+car2_v105   = car2_state105(3);   % v (lateral)
+car2_psi105 = car2_state105(5);   % psi (heading)
+car2_ux105  = car2_state105(6);   % ux (longitudinal)
+% Calculate global velocity components
+car2_vx105 = car2_ux105 * cos(car2_psi105) - car2_v105 * sin(car2_psi105);
+car2_vy105 = car2_ux105 * sin(car2_psi105) + car2_v105 * cos(car2_psi105);
+% Calculate unit vector
+vel_mag105 = sqrt(car2_vx105^2 + car2_vy105^2);
+if vel_mag105 > 1e-6
+    car2_uv_x105 = car2_vx105 / vel_mag105;
+    car2_uv_y105 = car2_vy105 / vel_mag105;
+else
+    car2_uv_x105 = 0;
+    car2_uv_y105 = 0;
+end
+% --- End Opponent Velocity Calculation ---
+
+% Plot
+h_target = plot(ax_pred2, targets105(:, 1), targets105(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+h_pred = plot(ax_pred2, pred105_x, pred105_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% Plot the velocity vector AND GET HANDLE for the legend
+h_car2 = plot(ax_pred2, ...
+    [car2_pos105(1), car2_pos105(1) + car2_uv_x105 * vector_scale], ...
+    [car2_pos105(2), car2_pos105(2) + car2_uv_y105 * vector_scale], ...
+    '-', 'Color', vector_color, 'LineWidth', vector_linewidth, ...
+    'DisplayName', 'Opponent Position & Velocity');
+
+
+hold(ax_pred2, 'off');
+% Apply IEEE Styling
+title(ax_pred2, 't = 10.5 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel(ax_pred2, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel(ax_pred2, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+set(ax_pred2, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+axis(ax_pred2, 'equal');
+xlim([50,120])
+ylim([-670,-530])
+
+
+% --- Subplot 3: Frame i = 110 ---
+ax_pred3 = subplot(1, 3, 3);
+hold(ax_pred3, 'on');
+i = 110;
+plot_track(ax_pred3,track)
+% Extract data
+targets110 = squeeze(reward_targets_active_eval(i, :, 1:2));
+preds110_raw = squeeze(predicted_states_eval(i, 1:2, 2:31));
+pred110_x = preds110_raw(1, :);
+pred110_y = preds110_raw(2, :);
+
+% --- Opponent Velocity Calculation (i=110) ---
+car2_state110 = vehicle2_states_eval(i, :);
+car2_pos110 = car2_state110(1:2); % [x, y]
+car2_v110   = car2_state110(3);   % v (lateral)     <--- BUG FIX
+car2_psi110 = car2_state110(5);   % psi (heading)   <--- BUG FIX
+car2_ux110  = car2_state110(6);   % ux (longitudinal) <--- BUG FIX
+% Calculate global velocity components
+car2_vx110 = car2_ux110 * cos(car2_psi110) - car2_v110 * sin(car2_psi110);
+car2_vy110 = car2_ux110 * sin(car2_psi110) + car2_v110 * cos(car2_psi110);
+% Calculate unit vector
+vel_mag110 = sqrt(car2_vx110^2 + car2_vy110^2);
+if vel_mag110 > 1e-6
+    car2_uv_x110 = car2_vx110 / vel_mag110;
+    car2_uv_y110 = car2_vy110 / vel_mag110;
+else
+    car2_uv_x110 = 0;
+    car2_uv_y110 = 0;
+end
+% --- End Opponent Velocity Calculation ---
+
+% Plot
+plot(ax_pred3, targets110(:, 1), targets110(:, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Reward Targets');
+plot(ax_pred3, pred110_x, pred110_y, 'b.-', 'DisplayName', 'Predicted Trajectory');
+% Plot the velocity vector as a simple line
+plot(ax_pred3, ...
+    [car2_pos110(1), car2_pos110(1) + car2_uv_x110 * vector_scale], ...
+    [car2_pos110(2), car2_pos110(2) + car2_uv_y110 * vector_scale], ...
+    '-', 'Color', vector_color, 'LineWidth', vector_linewidth, ...
+    'DisplayName', 'Opponent Position & Velocity');
+
+
+hold(ax_pred3, 'off');
+% Apply IEEE Styling
+title(ax_pred3, 't = 11.0 s', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel(ax_pred3, 'x [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel(ax_pred3, 'y [m]', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+set(ax_pred3, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+axis(ax_pred3, 'equal');
+xlim([50,120])
+ylim([-670,-530])
+
+
+% --- Create a single, centered legend at the bottom ---
+% Use handles from the second subplot (as in original code)
+lgd = legend(ax_pred3, [h_target, h_pred, h_car2], ...
+    {'Reward Targets', 'Predicted Trajectory', 'Opponent Position & Velocity'}, ... % <-- Updated label
+    'Orientation', 'horizontal', ...
+    'FontName', plotFontName, ...
+    'FontSize', axisFontSize, ...
+    'Box', 'off');
+% Reposition the legend to be centered at the bottom of the figure
+lgd.Units = 'normalized';
+lgdPos = lgd.Position;
+% Center it horizontally, move it to the bottom
+lgdPos(1) = (1 - lgdPos(3)) / 2; % (1 - width) / 2
+lgdPos(2) = 0.01; % 1% from the bottom edge
+lgd.Position = lgdPos;
+
+
+
+if savebool
+    saveas(gcf, savefolder + "Preds.eps", 'epsc');
+end
+
+% plot friction circle
+fric_circle_plot
+
+% 6. Modified Helper Function
+function plot_track(ax, track)
+    % Plots the track boundaries on the provided axes handle 'ax'
+    plot(ax, track.center(1,:), track.center(2,:), 'k--', 'HandleVisibility', 'off');
+    plot(ax, track.left(1,:), track.left(2,:), 'k', 'HandleVisibility', 'off');
+    plot(ax, track.right(1,:), track.right(2,:), 'k', 'HandleVisibility', 'off');
+    axis(ax, 'equal');
+end
+
+
+

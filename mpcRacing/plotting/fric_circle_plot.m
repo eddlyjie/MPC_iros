@@ -1,0 +1,151 @@
+% This is the main script to run in MATLAB.
+% It defines parameters, loads benchmark and evaluation data, calculates forces,
+% and generates comparative normalized friction circle plots.
+
+clc; 
+% close all;
+% clear all variables except savefolder
+clearvars -except savefolder savebool;
+
+% 1. Define Vehicle Parameters (matching Python model's expected keys)
+vehicle_params.la = 1.3776;       % m, front axle to CoG
+vehicle_params.lb = 1.4924;       % m, rear axle to CoG
+vehicle_params.hcg = 0.36;      % m, CoG height
+vehicle_params.Izz = 4760;     % kg*m^2, yaw inertia
+vehicle_params.muf = 0.98 * 1.05;      % front friction coefficient
+vehicle_params.mur = 1.03 * 1.05;      % rear friction coefficient
+vehicle_params.M = 1970.0;       % kg, total mass
+vehicle_params.g = 9.81;       % m/s^2
+vehicle_params.Caf = 222000;    % N/rad, front cornering stiffness
+vehicle_params.Car = 284000;   % N/rad, rear cornering stiffness
+vehicle_params.ratio = 0.72;    % front/rear longitudinal force distribution
+
+% 2. Load Trajectory Data
+% DATA 1: Benchmark data
+bench_data = load("../benchmark_data/model_save28_episode_1_states.mat","vehicle1_states");
+bench_states_raw = bench_data.vehicle1_states;
+states_benchmark.v = bench_states_raw(:,3);
+states_benchmark.r = bench_states_raw(:,4);
+states_benchmark.ux = bench_states_raw(:,6);
+states_benchmark.sa = bench_states_raw(:,7);
+states_benchmark.ax = bench_states_raw(:,8);
+
+% DATA 2: Evaluation data
+eval_data = load("../eval_data/model_save28_episode_7_data.mat","vehicle1_states");
+eval_states_raw = eval_data.vehicle1_states;
+states_eval.v = eval_states_raw(:,3);
+states_eval.r = eval_states_raw(:,4);
+states_eval.ux = eval_states_raw(:,6);
+states_eval.sa = eval_states_raw(:,7);
+states_eval.ax = eval_states_raw(:,8);
+
+% 3. Calculate Tire Forces for both datasets
+% --- Benchmark ---
+[F_front_bench, F_rear_bench] = calculate_tire_forces(states_benchmark, vehicle_params);
+% --- Evaluation ---
+[F_front_eval, F_rear_eval] = calculate_tire_forces(states_eval, vehicle_params);
+
+% 4. Calculate Normalized Forces for Plotting
+% Add epsilon to prevent division by zero if Fz is ever zero (e.g., in air)
+epsilon = 1e-6;
+
+% --- Benchmark Forces ---
+Fx_norm_f_bench = F_front_bench.Fx ./ (vehicle_params.muf * F_front_bench.Fz + epsilon);
+Fy_norm_f_bench = F_front_bench.Fy ./ (vehicle_params.muf * F_front_bench.Fz + epsilon);
+Fx_norm_r_bench = F_rear_bench.Fx ./ (vehicle_params.mur * F_rear_bench.Fz + epsilon);
+Fy_norm_r_bench = F_rear_bench.Fy ./ (vehicle_params.mur * F_rear_bench.Fz + epsilon);
+
+% --- Evaluation Forces ---
+Fx_norm_f_eval = F_front_eval.Fx ./ (vehicle_params.muf * F_front_eval.Fz + epsilon);
+Fy_norm_f_eval = F_front_eval.Fy ./ (vehicle_params.muf * F_front_eval.Fz + epsilon);
+Fx_norm_r_eval = F_rear_eval.Fx ./ (vehicle_params.mur * F_rear_eval.Fz + epsilon);
+Fy_norm_r_eval = F_rear_eval.Fy ./ (vehicle_params.mur * F_rear_eval.Fz + epsilon);
+
+% 5. Plot the Results
+% Set figure size for IEEE two-column width (approx 18 cm)
+figWidth_cm = 18;
+figHeight_cm = 9;
+figHandle = figure('Name', 'Normalized Friction Circle Usage (Benchmark vs Eval)', ...
+                   'Units', 'centimeters', ...
+                   'Position', [5 5 figWidth_cm figHeight_cm]);
+
+% --- Define IEEE Plotting Standards ---
+plotFontName = 'Arial';
+axisFontSize = 10;
+labelFontSize = 11;
+titleFontSize = 12;
+markerSize = 6; % Smaller marker size for clarity
+
+% --- Front Tire Plot ---
+subplot(1, 2, 1);
+% Store plot handles for the legend
+h1 = plot(Fx_norm_f_bench, Fy_norm_f_bench, 'b.', 'MarkerSize', markerSize); % Benchmark
+hold on;
+h2 = plot(Fx_norm_f_eval, Fy_norm_f_eval, 'r.', 'MarkerSize', markerSize);   % Evaluation
+h3 = plot_unit_circle(); % Call helper to draw circle
+hold off;
+% grid off; % Grid is off by default, explicitly removing 'grid on'
+axis equal; % Crucial for circle plots
+xlim([-1.2, 1.2]);
+ylim([-1.2, 1.2]);
+xticks(-1:0.5:1);
+yticks(-1:0.5:1);
+title('Front Tire Friction Usage', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel('Normalized Longitudinal Force ($F_x / \mu F_z$)', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel('Normalized Lateral Force ($F_y / \mu F_z$)', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% Remove individual legend
+% lgd1 = legend('Benchmark', 'Evaluation', 'Friction Limit', 'Location', 'northoutside');
+% set(lgd1, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off', 'Orientation', 'horizontal');
+
+% Apply axes properties
+set(gca, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+
+% --- Rear Tire Plot ---
+subplot(1, 2, 2);
+plot(Fx_norm_r_bench, Fy_norm_r_bench, 'b.', 'MarkerSize', markerSize); % Benchmark in blue
+hold on;
+plot(Fx_norm_r_eval, Fy_norm_r_eval, 'r.', 'MarkerSize', markerSize);   % Evaluation in red
+plot_unit_circle(); % Call helper to draw circle
+hold off;
+% grid off; % Grid is off by default, explicitly removing 'grid on'
+axis equal; % Crucial for circle plots
+xlim([-1.2, 1.2]);
+ylim([-1.2, 1.2]);
+xticks(-1:0.5:1);
+yticks(-1:0.5:1);
+title('Rear Tire Friction Usage', 'FontName', plotFontName, 'FontSize', titleFontSize);
+xlabel('Normalized Longitudinal Force ($F_x / \mu F_z$)', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+ylabel('Normalized Lateral Force ($F_y / \mu F_z$)', 'Interpreter', 'latex', 'FontName', plotFontName, 'FontSize', labelFontSize);
+% Remove individual legend
+% lgd2 = legend('Benchmark', 'Evaluation', 'Friction Limit', 'Location', 'northoutside');
+% set(lgd2, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'off', 'Orientation', 'horizontal');
+
+% Apply axes properties
+set(gca, 'FontName', plotFontName, 'FontSize', axisFontSize, 'Box', 'on', 'TickDir', 'in');
+
+% --- Create a single, centered legend at the bottom ---
+% We use the handles from the first plot (h1, h2, h3) as they represent
+% all the data series types.
+% Create the legend on the current axes (the 2nd subplot)
+lgd = legend([h1, h2, h3], {'Benchmark', 'Evaluation', 'Friction Limit'}, ...
+    'Orientation', 'horizontal', ...
+    'FontName', plotFontName, ...
+    'FontSize', axisFontSize, ...
+    'Box', 'off');
+
+% Reposition the legend to be centered at the bottom
+% Get its original position in normalized units
+lgd.Units = 'normalized';
+lgdPos = lgd.Position;
+% Center it horizontally, move it to the bottom
+lgdPos(1) = (1 - lgdPos(3)) / 2; % (1 - width) / 2
+lgdPos(2) = 0.01; % 1% from the bottom edge
+lgd.Position = lgdPos;
+if savebool
+    saveas(gcf, savefolder + "Fric_circ.eps", 'epsc');
+end
+% sgtitle('Vehicle Friction Circle Utilization (Benchmark vs. Evaluation)', 'FontSize', 16, 'FontWeight', 'bold');
+% Note: sgtitle can interfere with subplot layout in print formats.
+% It's often better to add a main title in the LaTeX document itself.
+
+
