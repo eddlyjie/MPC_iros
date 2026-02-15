@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 import numpy as np
 import os
+CHECK_POINT = "models/sac"
 
 class ReplayBuffer:
     def __init__(self, max_size, input_shape, n_actions):
@@ -38,7 +39,7 @@ class ReplayBuffer:
         return states, actions, rewards, states_, dones
 
 class CriticNetwork(nn.Module):
-    def __init__(self, beta, input_dims, n_actions, fc1_dims=256, fc2_dims=256, name='critic', chkpt_dir='models/sac'):
+    def __init__(self, beta, input_dims, n_actions, fc1_dims=256, fc2_dims=256, name='critic', chkpt_dir=CHECK_POINT):
         super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
         self.n_actions = n_actions
@@ -80,7 +81,7 @@ class CriticNetwork(nn.Module):
 
 class ActorNetwork(nn.Module):
     def __init__(self, alpha, input_dims, n_actions, action_scale, action_bias, 
-                 fc1_dims=256, fc2_dims=256, name='actor', chkpt_dir='models/sac'):
+                 fc1_dims=256, fc2_dims=256, name='actor', chkpt_dir=CHECK_POINT):
         super(ActorNetwork, self).__init__()
         self.input_dims = input_dims
         self.n_actions = n_actions

@@ -58,7 +58,7 @@ VEHICLE_PARAMS_2 = {
 # --- Track Data ---
 TRACK_PARAMS = {
     'maxNumBlocks': 35,
-    'mat_file': 'processed_ThunderHill.mat'
+    'mat_file': 'track/circle/circle_track_20_R_200m_W_20m.mat'
 }
 
 # --- MPC Cost Function Weights ---
@@ -128,9 +128,12 @@ CONTROL_BOUNDS_2 = [
 # --- Initial State ---
 # x0 = [x, y, v, r, psi, ux, sa, ax]
 # training values
-X0_INIT = np.array([349.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
-X0_INIT_2 = np.array([355.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
-# testing values
+# X0_INIT = np.array([349.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
+# X0_INIT_2 = np.array([355.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
+
+X0_INIT = np.array([-1, 7, 0.0, 0.0, 1.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+X0_INIT_2 = np.array([1, 0.0, 0.0, 0.0, 1.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+# # testing values
 # X0_INIT = np.array([313.0, -891.0, 0.0, 0.0, 0.7297, 15.0, 0.0, 0.0]).reshape(-1, 1)
 # X0_INIT_2 = np.array([307.69, -895.0, 0.0, 0.0, 0.5591, 15.0, 0.0, 0.0]).reshape(-1, 1)
 # X0_INIT = np.array([2.780309713107110e+02, -9.036261981441817e+02, 0.0, 0.0, 0.089998862428691, 5.0, 0.0, 0.0]).reshape(-1, 1)

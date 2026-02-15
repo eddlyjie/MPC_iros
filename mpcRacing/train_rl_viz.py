@@ -10,6 +10,11 @@ from sac_agent import SACAgent
 from visualization_rl import Visualization
 import config
 
+CHECK_POINT = "models/straight/01" 
+SCORE_HISTORY = os.path.join(CHECK_POINT,"score_history.csv")
+PLOT_NAME = os.path.join(CHECK_POINT,"learning_curve.png")
+
+
 def find_latest_model(chkpt_dir):
     """
     Finds the latest saved model in the checkpoint directory.
@@ -88,7 +93,7 @@ def main():
         beta=config.RL_PARAMS['beta'],
         batch_size=config.RL_PARAMS['batch_size'],
         fc1_dims=512,
-        fc2_dims=512
+        fc2_dims=512,
     )
     
     # 3. Initialize Visualization
@@ -111,7 +116,7 @@ def main():
             print(f"... models loaded successfully. Next save will be 'save{next_save_num}'.")
             
             # Try to load score history to resume best_score
-            if os.path.exists('score_history.csv'):
+            if os.path.exists(SCORE_HISTORY):
                 print("... loading score history.")
                 # Use .tolist() to convert numpy array back to a standard list
                 score_history = np.loadtxt('score_history.csv', delimiter=',').tolist()
@@ -220,10 +225,11 @@ def main():
     try:
         # Save score history to CSV
         scores_data = np.array(score_history)
-        np.savetxt('score_history.csv', scores_data, delimiter=',')
+        
+        np.savetxt(SCORE_HISTORY, scores_data, delimiter=',')
         
         # Save plot
-        plot_and_save_scores(score_history, avg_score_history)
+        plot_and_save_scores(score_history, avg_score_history, PLOT_NAME)
     except Exception as e:
         print(f"Error saving logs/plot: {e}")
 
