@@ -1,12 +1,16 @@
 clc; clear; close all;
 data = load("processed_ThunderHill.mat");
 
-xl = data.fined_left_bound(1,100);
-yl = data.fined_left_bound(2,100);
-
-xr = data.fined_right_bound(1,100);
-yr = data.fined_right_bound(2,100);
+x=data.block_info(1,:);
+y = data.block_info(2,:);
 
 
+x0= x(20);
+y0 = y(20);
+x1= x(21);
+y1 = y(21);
 
-dis = sqrt((xl-xr)^2+(yl-yr)^2);
+
+
+
+dis = sqrt((x0-x1)^2+(y0-y1)^2);
