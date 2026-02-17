@@ -413,7 +413,7 @@ class RLEnvironment(gym.Env):
             terminated = True
 
         # TERMINATE: Time limit
-        if self.time_elapsed >= 20.0:
+        if self.time_elapsed >= config.SIM_TIME:
             terminated = True
             reward += 1000.0
             

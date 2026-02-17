@@ -30,7 +30,7 @@ def run_simulation():
     # The initial guesses for the solver are now managed internally by the MPC_Solver class
     
     print("--- Starting Simulation Loop ---")
-    sim_time_seconds = 20
+    sim_time_seconds = mpc_config.SIM_TIME
     mpc_iter = 0
     start_time = time.time()
     

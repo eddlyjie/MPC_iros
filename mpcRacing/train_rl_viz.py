@@ -3,14 +3,14 @@ import time
 import matplotlib.pyplot as plt
 import os
 import re # Added for parsing filenames
-import keyboard
+# import keyboard
 
 from environment_rl import RLEnvironment
 from sac_agent import SACAgent
 from visualization_rl import Visualization
 import config
 
-CHECK_POINT = "models/straight/01" 
+CHECK_POINT = "models/map/02" 
 SCORE_HISTORY = os.path.join(CHECK_POINT,"score_history.csv")
 PLOT_NAME = os.path.join(CHECK_POINT,"learning_curve.png")
 
@@ -119,7 +119,8 @@ def main():
             if os.path.exists(SCORE_HISTORY):
                 print("... loading score history.")
                 # Use .tolist() to convert numpy array back to a standard list
-                score_history = np.loadtxt('score_history.csv', delimiter=',').tolist()
+                score_history = np.loadtxt(SCORE_HISTORY, delimiter=',').tolist()
+
                 
                 # Recalculate best_score and avg_score_history from loaded history
                 if len(score_history) > 100:
@@ -159,10 +160,10 @@ def main():
 
             while not terminated and not truncated:
                 # when key ] is pressed, stop training
-                if keyboard.is_pressed(']'):
-                    print("']' key pressed. Stopping training after this episode.")
-                    stop = True
-                    break
+                # if keyboard.is_pressed(']'):
+                #     print("']' key pressed. Stopping training after this episode.")
+                #     stop = True
+                #     break
 
                 action = agent.choose_action(observation)
                 
