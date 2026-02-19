@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 import numpy as np
 import os
-CHECK_POINT = "models/map/02" 
+CHECK_POINT = config.CKPT
 
 class ReplayBuffer:
     def __init__(self, max_size, input_shape, n_actions):

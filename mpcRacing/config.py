@@ -58,7 +58,7 @@ VEHICLE_PARAMS_2 = {
 # --- Track Data ---
 TRACK_PARAMS = {
     'maxNumBlocks': 35,
-    'mat_file': 'track/map/track_02.mat'
+    'mat_file': 'track/map/track_08.mat'
 }
 
 # --- MPC Cost Function Weights ---
@@ -131,8 +131,11 @@ CONTROL_BOUNDS_2 = [
 # X0_INIT = np.array([349.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
 # X0_INIT_2 = np.array([355.0, -577.0, 0.0, 0.0, -3.0227, 15.0, 0.0, 0.0]).reshape(-1, 1)
 
-X0_INIT = np.array([-15, -350, 0.0, 0.0, -2, 15.0, 0.0, 0.0]).reshape(-1, 1)
-X0_INIT_2 = np.array([-15, -342, 0.0, 0.0, -2, 15.0, 0.0, 0.0]).reshape(-1, 1)
+X0_INIT = np.array([143, 370, 0.0, 0.0, 0.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+X0_INIT_2 = np.array([141, 365, 0.0, 0.0, 0.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+
+
+CKPT = "models/map/08"
 # # testing values
 # X0_INIT = np.array([313.0, -891.0, 0.0, 0.0, 0.7297, 15.0, 0.0, 0.0]).reshape(-1, 1)
 # X0_INIT_2 = np.array([307.69, -895.0, 0.0, 0.0, 0.5591, 15.0, 0.0, 0.0]).reshape(-1, 1)

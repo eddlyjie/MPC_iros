@@ -10,7 +10,7 @@ from sac_agent import SACAgent
 from visualization_rl import Visualization
 import config
 
-CHECK_POINT = "models/map/02" 
+CHECK_POINT =config.CKPT
 SCORE_HISTORY = os.path.join(CHECK_POINT,"score_history.csv")
 PLOT_NAME = os.path.join(CHECK_POINT,"learning_curve.png")
 
