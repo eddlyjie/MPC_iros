@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 import numpy as np
 import os
+import config
+
 CHECK_POINT = config.CKPT
 
 class ReplayBuffer:
