@@ -58,7 +58,7 @@ VEHICLE_PARAMS_2 = {
 # --- Track Data ---
 TRACK_PARAMS = {
     'maxNumBlocks': 35,
-    'mat_file': 'track/map/track_03.mat'
+    'mat_file': 'track/map/track_02.mat'
     # 'mat_file': 'track/thunder/processed_ThunderHill.mat'
 }
 
@@ -127,7 +127,7 @@ CONTROL_BOUNDS_2 = [
 ]
 
 #change the map to test
-CKPT = "models/map/03"
+CKPT = "models/map/02"
 
 
 # --- Initial State ---
@@ -139,6 +139,9 @@ CKPT = "models/map/03"
 #08
 # X0_INIT = np.array([143, 370, 0.0, 0.0, 0.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
 # X0_INIT_2 = np.array([141, 365, 0.0, 0.0, 0.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+#02
+X0_INIT = np.array([-24, -380, 0.0, 0.0, -1.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
+X0_INIT_2 = np.array([-24, -375, 0.0, 0.0, -1.5, 15.0, 0.0, 0.0]).reshape(-1, 1)
 
 
 # # testing values
